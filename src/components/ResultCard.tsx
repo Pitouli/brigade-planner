@@ -121,7 +121,7 @@ export function ResultCard({ run, parsed, onRemove }: ResultCardProps) {
                         </Badge>
                       </Table.Td>
                       <Table.Td>
-                        <Text span fw={700} c="orange">
+                        <Text span fw={700} c="orange" style={{ whiteSpace: 'nowrap' }}>
                           {chefName} {chefName !== '—' && '♛'}
                         </Text>
                       </Table.Td>

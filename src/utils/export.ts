@@ -2,18 +2,32 @@ import type { OptimizationRun, ParsedTable } from '../engine/types';
 
 export function runToText(run: OptimizationRun, parsed: ParsedTable): string {
   const P = parsed.participants;
-  let out = `RÉPARTITION #${run.id} (score ${run.detail.score.toFixed(1)}, ratio ${run.ratio})\n\n`;
-  run.genome.forEach((brigade, mi) => {
-    if (!brigade.cooks.length) return;
-    const meal = parsed.meals[mi];
-    const chef = brigade.chef >= 0 ? P[brigade.chef].name : '—';
-    const others = brigade.cooks
-      .filter((i) => i !== brigade.chef)
-      .map((i) => P[i].name)
-      .join(', ');
-    out += `${meal.label}\n  Chef : ${chef}\n  Tâcherons : ${others || '—'}\n`;
-  });
-  return out;
+  const meals = parsed.meals.filter((_, mi) => run.genome[mi]?.cooks.length);
+
+  if (meals.length === 0) return '';
+
+  const rows: string[][] = [];
+  const maxCrew = Math.max(...meals.map((_, mi) => run.genome[mi]?.cooks.length ?? 0), 0);
+
+  rows.push(
+    meals.map((_, mi) => {
+      const brigade = run.genome[mi];
+      return brigade && brigade.chef >= 0 ? P[brigade.chef].name : '';
+    }),
+  );
+
+  for (let rowIdx = 1; rowIdx < maxCrew; rowIdx += 1) {
+    rows.push(
+      meals.map((_, mi) => {
+        const brigade = run.genome[mi];
+        if (!brigade) return '';
+        const others = brigade.cooks.filter((i) => i !== brigade.chef).map((i) => P[i].name);
+        return others[rowIdx - 1] ?? '';
+      }),
+    );
+  }
+
+  return rows.map((row) => row.join('\t')).join('\n');
 }
 
 export function downloadRunCsv(run: OptimizationRun, parsed: ParsedTable): void {

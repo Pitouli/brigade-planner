@@ -2,6 +2,7 @@ import { Badge, Button, Group, Stack, Text, Textarea, Title } from '@mantine/cor
 import { useCallback } from 'react';
 import { EXAMPLE_CSV } from '../data/exampleCsv';
 import type { ParsedTable } from '../engine/types';
+import { ParsedPreview } from './ParsedPreview';
 
 interface DataInputProps {
   csv: string;
@@ -26,8 +27,10 @@ export function DataInput({ csv, onCsvChange, parsed, parseError, onParse }: Dat
         Données des participants
       </Title>
       <Text size="sm" c="dimmed">
-        Colle depuis un tableur CSV. Colonnes attendues : <strong>Nom, Horaire, Chefferie</strong>{' '}
-        puis un « Miam » par repas.
+        Colle depuis un tableur, même en vrac : les colonnes inutiles sont ignorées, seules{' '}
+        <strong>Nom, Horaire, Chefferie, Exempté</strong> et les colonnes finissant par
+        «&nbsp;dîner&nbsp;» ou «&nbsp;déj.&nbsp;» sont conservées. Le tableau de tâcheronnage en
+        dessous (chef de brigade + tâcherons) est détecté automatiquement.
       </Text>
       <Textarea
         value={csv}
@@ -60,6 +63,7 @@ export function DataInput({ csv, onCsvChange, parsed, parseError, onParse }: Dat
           </Badge>
         )}
       </Group>
+      {parsed && <ParsedPreview parsed={parsed} />}
     </Stack>
   );
 }

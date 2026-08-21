@@ -25,20 +25,27 @@ function shuffle<T>(arr: T[]): T[] {
   return arr;
 }
 
-function randomBrigade(attendees: number[], size: number, parsed: ParsedTable): Brigade {
-  const pool = shuffle(attendees.slice());
-  const cooks = pool.slice(0, size);
-  const willing = cooks.filter((i) => parsed.participants[i].chef !== 'jamais');
-  const chef = willing.length ? pick(willing) : pick(cooks);
+/** Builds a brigade for meal `mi`, always keeping its immutable chef/tâcherons (if any) in place. */
+function randomBrigade(mi: number, model: Model, parsed: ParsedTable): Brigade {
+  const { eligibleAttendees, brigadeSize, immutableChef, immutableCooks } = model;
+  const forced = immutableCooks[mi];
+  const extraCount = Math.max(0, brigadeSize[mi] - forced.length);
+  const pool = shuffle(eligibleAttendees[mi].filter((x) => !forced.includes(x)));
+  const cooks = forced.concat(pool.slice(0, extraCount));
+
+  let chef = immutableChef[mi];
+  if (chef == null) {
+    const willing = cooks.filter((i) => parsed.participants[i].chef !== 'jamais');
+    chef = willing.length ? pick(willing) : cooks.length ? pick(cooks) : -1;
+  }
   return { cooks, chef };
 }
 
 export function initGenome(model: Model, parsed: ParsedTable): Genome {
-  const { mealAttendees, brigadeSize } = model;
   return parsed.meals.map((_, i) =>
-    brigadeSize[i] === 0
+    model.brigadeSize[i] === 0 && model.immutableCooks[i].length === 0
       ? { cooks: [], chef: -1 }
-      : randomBrigade(mealAttendees[i], brigadeSize[i], parsed),
+      : randomBrigade(i, model, parsed),
   );
 }
 
@@ -189,28 +196,35 @@ export function evaluate(
   return { score, violations, cookCount, chefCount };
 }
 
+/** Mutates cooks/chef per meal, never touching the immutable chef/tâcherons forced by the tâcheronnage table. */
 function mutate(genome: Genome, model: Model, parsed: ParsedTable, rate: number): Genome {
   const g = cloneGenome(genome);
-  const { mealAttendees, brigadeSize } = model;
+  const { eligibleAttendees, brigadeSize, immutableChef, immutableCooks } = model;
 
   for (let mi = 0; mi < g.length; mi++) {
-    if (brigadeSize[mi] === 0) continue;
+    const forced = immutableCooks[mi];
+    if (brigadeSize[mi] === 0 && forced.length === 0) continue;
     if (Math.random() >= rate) continue;
 
     const brigade = g[mi];
-    const attendees = mealAttendees[mi];
+    const attendees = eligibleAttendees[mi];
+    const freeSlots = brigade.cooks
+      .map((_, idx) => idx)
+      .filter((idx) => !forced.includes(brigade.cooks[idx]));
+    if (!freeSlots.length) continue;
+
     if (Math.random() < 0.6 && attendees.length > brigade.cooks.length) {
       const nonCooks = attendees.filter((x) => !brigade.cooks.includes(x));
       if (nonCooks.length) {
-        const pos = randInt(brigade.cooks.length);
+        const pos = pick(freeSlots);
         const wasChef = brigade.cooks[pos] === brigade.chef;
         brigade.cooks[pos] = pick(nonCooks);
-        if (wasChef) {
+        if (wasChef && immutableChef[mi] == null) {
           const willing = brigade.cooks.filter((i) => parsed.participants[i].chef !== 'jamais');
           brigade.chef = willing.length ? pick(willing) : pick(brigade.cooks);
         }
       }
-    } else {
+    } else if (immutableChef[mi] == null) {
       brigade.chef = pick(brigade.cooks);
     }
   }

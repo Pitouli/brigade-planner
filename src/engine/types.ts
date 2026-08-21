@@ -2,6 +2,7 @@ export type MealType = 'dej' | 'diner';
 export type HorairePref = 'dej' | 'diner' | 'indiff';
 export type ChefPref = 'jamais' | 'unefois' | 'toujours' | 'indiff';
 export type ViolationType = 'horaire' | 'firstlast' | 'sameday' | 'target' | 'chef';
+export type ImmutableRole = 'chef' | 'tacheron';
 
 export interface Meal {
   label: string;
@@ -10,27 +11,48 @@ export interface Meal {
   day: number;
 }
 
+export interface ImmutableRoleEntry {
+  mealIdx: number;
+  role: ImmutableRole;
+}
+
 export interface Participant {
   name: string;
   horaire: HorairePref;
   chef: ChefPref;
+  exempt: boolean;
   attends: boolean[];
   mealIdx: number[];
   miamCount: number;
   firstIdx: number;
   lastIdx: number;
+  immutable: ImmutableRoleEntry[];
+}
+
+/** A chef/tâcheron assignment detected from the "tâcheronnage" sub-table pasted below the MIAM table. */
+export interface ImmutableAssignment {
+  mealIdx: number;
+  name: string;
+  participantIdx: number;
+  role: ImmutableRole;
 }
 
 export interface ParsedTable {
   meals: Meal[];
   participants: Participant[];
   delim: string;
+  immutables: ImmutableAssignment[];
 }
 
 export interface Model {
   mealAttendees: number[][];
+  eligibleAttendees: number[][];
   brigadeSize: number[];
   targets: number[];
+  /** Chef forced by the tâcheronnage sub-table, per meal (null if free). */
+  immutableChef: (number | null)[];
+  /** Cooks (chef included) forced by the tâcheronnage sub-table, per meal. */
+  immutableCooks: number[][];
 }
 
 export interface Brigade {

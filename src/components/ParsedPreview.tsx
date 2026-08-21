@@ -90,7 +90,7 @@ export function ParsedPreview({ parsed }: ParsedPreviewProps) {
                         </Text>
                       ) : attends ? (
                         <Text span c="teal">
-                          ✅
+                          ✓
                         </Text>
                       ) : (
                         <Text span c="dimmed">

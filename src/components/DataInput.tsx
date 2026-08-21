@@ -26,10 +26,7 @@ export function DataInput({ csv, onCsvChange, parsed, parseError, onParse }: Dat
         Données des participants
       </Title>
       <Text size="sm" c="dimmed">
-        Colle depuis un tableur (séparateur Tab, ;, , ou | — auto-détecté). Colonnes attendues :{' '}
-        <Text span fw={600}>
-          Nom, Horaire, Chefferie
-        </Text>{' '}
+        Colle depuis un tableur CSV. Colonnes attendues : <strong>Nom, Horaire, Chefferie</strong>{' '}
         puis un « Miam » par repas.
       </Text>
       <Textarea

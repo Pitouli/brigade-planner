@@ -2,15 +2,17 @@ import type { OptimizationRun, ParsedTable } from '../engine/types';
 
 export function runToText(run: OptimizationRun, parsed: ParsedTable): string {
   const P = parsed.participants;
-  const meals = parsed.meals.filter((_, mi) => run.genome[mi]?.cooks.length);
+  const mealCount = parsed.meals.length;
 
-  if (meals.length === 0) return '';
+  if (mealCount === 0) return '';
 
   const rows: string[][] = [];
-  const maxCrew = Math.max(...meals.map((_, mi) => run.genome[mi]?.cooks.length ?? 0), 0);
+  const maxCrew = Math.max(...run.genome.map((brigade) => brigade.cooks.length), 0);
+
+  if (maxCrew === 0) return '';
 
   rows.push(
-    meals.map((_, mi) => {
+    parsed.meals.map((_, mi) => {
       const brigade = run.genome[mi];
       return brigade && brigade.chef >= 0 ? P[brigade.chef].name : '';
     }),
@@ -18,7 +20,7 @@ export function runToText(run: OptimizationRun, parsed: ParsedTable): string {
 
   for (let rowIdx = 1; rowIdx < maxCrew; rowIdx += 1) {
     rows.push(
-      meals.map((_, mi) => {
+      parsed.meals.map((_, mi) => {
         const brigade = run.genome[mi];
         if (!brigade) return '';
         const others = brigade.cooks.filter((i) => i !== brigade.chef).map((i) => P[i].name);

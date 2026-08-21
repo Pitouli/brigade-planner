@@ -88,4 +88,55 @@ describe('runToText', () => {
       ['Cécile', ''],
     ]);
   });
+
+  it('keeps empty meal columns so later meals remain aligned', () => {
+    const parsed: ParsedTable = {
+      delim: ';',
+      meals: [
+        { label: 'Ven. dîner', type: 'diner', col: 0, day: 0 },
+        { label: 'Sam. déj.', type: 'dej', col: 1, day: 1 },
+        { label: 'Sam. déj.', type: 'dej', col: 2, day: 8 },
+      ],
+      participants: [
+        {
+          name: 'Alice',
+          horaire: 'indiff',
+          chef: 'indiff',
+          exempt: false,
+          attends: [true, true, true],
+          mealIdx: [0, 1, 2],
+          miamCount: 3,
+          firstIdx: 0,
+          lastIdx: 2,
+          immutable: [],
+        },
+        {
+          name: 'Bob',
+          horaire: 'indiff',
+          chef: 'indiff',
+          exempt: false,
+          attends: [true, true, true],
+          mealIdx: [0, 1, 2],
+          miamCount: 3,
+          firstIdx: 0,
+          lastIdx: 2,
+          immutable: [],
+        },
+      ],
+      immutables: [],
+    };
+    const run: OptimizationRun = {
+      id: 8,
+      ratio: 1,
+      ms: 12,
+      genome: [
+        { chef: -1, cooks: [] },
+        { chef: 0, cooks: [0] },
+        { chef: 1, cooks: [1] },
+      ],
+      detail: { score: 0, violations: [], cookCount: [1, 1], chefCount: [1, 1] },
+    };
+
+    expect(runToText(run, parsed)).toBe('\tAlice\tBob');
+  });
 });

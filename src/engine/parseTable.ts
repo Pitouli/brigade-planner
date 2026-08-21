@@ -151,19 +151,25 @@ export function parseTable(text: string): ParsedTable {
     if (!participantRow) continue;
 
     const horaireNorm = normalize(cells[horaireIdx]);
-    const horaire = horaireNorm.includes('dej')
-      ? 'dej'
-      : horaireNorm.includes('din')
-        ? 'diner'
-        : 'indiff';
+    const horaire =
+      horaireNorm === ''
+        ? 'indiff'
+        : horaireNorm.includes('dej')
+          ? 'dej'
+          : horaireNorm.includes('din')
+            ? 'diner'
+            : 'indiff';
     const chefNorm = normalize(cells[chefferieIdx]);
-    const chef = chefNorm.includes('jamais')
-      ? 'jamais'
-      : chefNorm.includes('toujours')
-        ? 'toujours'
-        : chefNorm.includes('fois')
-          ? 'unefois'
-          : 'indiff';
+    const chef =
+      chefNorm === ''
+        ? 'jamais'
+        : chefNorm.includes('jamais')
+          ? 'jamais'
+          : chefNorm.includes('toujours')
+            ? 'toujours'
+            : chefNorm.includes('fois')
+              ? 'unefois'
+              : 'jamais';
     const exempt = normalize(cells[exemptIdx]) === 'true';
 
     const attends = mealCols.map(({ index }) => normalize(cells[index]).includes('miam'));

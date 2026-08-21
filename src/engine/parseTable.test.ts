@@ -48,6 +48,27 @@ describe('parseTable', () => {
     expect(parsed.participants[0].name).toBe('Alice');
   });
 
+  it('defaults empty chefferie to jamais and empty horaire to indiff', () => {
+    const csv = [
+      'Nom;Horaire;Chefferie;Ven. dîner;Sam. déj.',
+      'Alice;; ;Miam;Miam',
+      'Bob; ; ;Miam;Miam',
+    ].join('\n');
+
+    const parsed = parseTable(csv);
+    expect(parsed.participants).toHaveLength(2);
+    expect(parsed.participants[0]).toMatchObject({
+      name: 'Alice',
+      horaire: 'indiff',
+      chef: 'jamais',
+    });
+    expect(parsed.participants[1]).toMatchObject({
+      name: 'Bob',
+      horaire: 'indiff',
+      chef: 'jamais',
+    });
+  });
+
   it('detects the tâcheronnage sub-table as immutable chef/tâcheron assignments', () => {
     const csv = [
       'Nom;Horaire;Chefferie;Ven. dîner;Sam. déj.',

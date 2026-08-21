@@ -187,6 +187,34 @@ export function evaluate(
     }
   });
 
+  const alwaysChef = participants
+    .map((p, pi) => ({ p, pi }))
+    .filter(({ p, pi }) => p.chef === 'toujours' && cookCount[pi] > 0);
+  if (alwaysChef.length >= 2) {
+    const totalCook = alwaysChef.reduce((sum, { pi }) => sum + cookCount[pi], 0);
+    const totalChef = alwaysChef.reduce((sum, { pi }) => sum + chefCount[pi], 0);
+    const meanRate = totalCook > 0 ? totalChef / totalCook : 0;
+
+    let imbalance = 0;
+    alwaysChef.forEach(({ pi }) => {
+      const rate = chefCount[pi] / cookCount[pi];
+      const diff = rate - meanRate;
+      // Weighted by task count to keep the criterion proportional to each person's load.
+      imbalance += cookCount[pi] * diff * diff;
+    });
+
+    if (imbalance > 0) {
+      score += weights.chefToujours * imbalance;
+      if (detail) {
+        const names = alwaysChef.map(({ p }) => p.name).join(', ');
+        violations.push({
+          type: 'chef',
+          text: `Taux de chefferie déséquilibré entre profils « TOUJOURS » (${names}) : ~${(meanRate * 100).toFixed(0)}% attendu en moyenne`,
+        });
+      }
+    }
+  }
+
   if (previousGenomes?.length && weights.novelty > 0) {
     let sum = 0;
     for (const prev of previousGenomes) sum += similarity(genome, prev);

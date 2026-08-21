@@ -35,7 +35,7 @@ export function ConstraintsForm({
     chefUnefois:
       'Encourage une distribution plus équilibrée entre les personnes qui souhaitent être chef une seule fois.',
     chefToujours:
-      'Pèse la préférence des personnes qui veulent éviter le rôle de chef à chaque repas.',
+      'Pénalise les cas « toujours » non-chef et aide à équilibrer leur taux de chefferie entre eux, au prorata de leurs tâches.',
     targetPerson:
       'Aide à tendre la répartition vers l’objectif cible tout en respectant les préférences individuelles.',
     popSize: 'Taille de la population générée à chaque étape de l’algorithme.',

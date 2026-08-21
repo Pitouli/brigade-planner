@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { initGenome, runGA } from './genetic';
+import { evaluate, initGenome, runGA } from './genetic';
 import { buildModel } from './model';
 import { parseTable } from './parseTable';
-import { DEFAULT_GA_SETTINGS, DEFAULT_WEIGHTS } from './types';
+import { DEFAULT_GA_SETTINGS, DEFAULT_WEIGHTS, type ParsedTable } from './types';
 
 const CSV = [
   'Nom;Horaire;Chefferie;Ven. dîner;Sam. déj.',
@@ -79,5 +79,94 @@ describe('genetic immutable placements', () => {
     expect(calls.length).toBeGreaterThan(0);
     expect(calls[0]).toBeGreaterThan(0);
     expect(calls.at(-1)).toBe(100);
+  });
+
+  it('penalizes imbalanced chef rates between participants who want to always chef', () => {
+    const parsed: ParsedTable = {
+      delim: ';',
+      meals: [
+        { label: 'R1', type: 'dej', col: 0, day: 0 },
+        { label: 'R2', type: 'dej', col: 1, day: 0 },
+        { label: 'R3', type: 'diner', col: 2, day: 1 },
+        { label: 'R4', type: 'diner', col: 3, day: 1 },
+      ],
+      participants: [
+        {
+          name: 'Alice',
+          horaire: 'indiff',
+          chef: 'toujours',
+          exempt: false,
+          attends: [true, true, true, true],
+          mealIdx: [0, 1, 2, 3],
+          miamCount: 4,
+          firstIdx: 0,
+          lastIdx: 3,
+          immutable: [],
+        },
+        {
+          name: 'Bob',
+          horaire: 'indiff',
+          chef: 'toujours',
+          exempt: false,
+          attends: [true, true, true, true],
+          mealIdx: [0, 1, 2, 3],
+          miamCount: 4,
+          firstIdx: 0,
+          lastIdx: 3,
+          immutable: [],
+        },
+        {
+          name: 'Carla',
+          horaire: 'indiff',
+          chef: 'indiff',
+          exempt: false,
+          attends: [true, true, true, true],
+          mealIdx: [0, 1, 2, 3],
+          miamCount: 4,
+          firstIdx: 0,
+          lastIdx: 3,
+          immutable: [],
+        },
+      ],
+      immutables: [],
+    };
+
+    const model = buildModel(parsed, 0.5);
+    const weights = {
+      ...DEFAULT_WEIGHTS,
+      targetPerson: 0,
+      sameDay: 0,
+      firstLast: 0,
+      horaire: 0,
+      chefJamais: 0,
+      chefUnefois: 0,
+      novelty: 0,
+      chefToujours: 1,
+    };
+
+    const imbalanced = [
+      { cooks: [0, 1], chef: 0 },
+      { cooks: [0, 1], chef: 0 },
+      { cooks: [0, 2], chef: 2 },
+      { cooks: [0, 2], chef: 2 },
+    ];
+    const balanced = [
+      { cooks: [0, 1], chef: 0 },
+      { cooks: [0, 1], chef: 1 },
+      { cooks: [0, 2], chef: 2 },
+      { cooks: [0, 2], chef: 2 },
+    ];
+
+    const r1 = evaluate(imbalanced, model, parsed, weights, null, true);
+    const r2 = evaluate(balanced, model, parsed, weights, null, true);
+
+    expect(r1.chefCount.slice(0, 2)).toEqual([2, 0]);
+    expect(r1.cookCount.slice(0, 2)).toEqual([4, 2]);
+    expect(r2.chefCount.slice(0, 2)).toEqual([1, 1]);
+    expect(r2.cookCount.slice(0, 2)).toEqual([4, 2]);
+    expect(r1.score).toBeGreaterThan(r2.score);
+    expect(
+      r1.violations.some((v) => v.type === 'chef' && v.text.includes('Taux de chefferie')),
+    ).toBe(true);
   });
 });

@@ -15,6 +15,8 @@ interface WorkerRequest {
 interface WorkerProgressMessage {
   type: 'progress';
   payload: {
+    current: number;
+    total: number;
     progress: number;
   };
 }
@@ -51,7 +53,11 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
       (current, total) => {
         const response: WorkerProgressMessage = {
           type: 'progress',
-          payload: { progress: total === 0 ? 0 : (current / total) * 100 },
+          payload: {
+            current,
+            total,
+            progress: total === 0 ? 0 : (current / total) * 100,
+          },
         };
         self.postMessage(response);
       },

@@ -7,6 +7,8 @@ interface GenerationPanelProps {
   isRunning: boolean;
   lastRunMs: number | null;
   progress: number;
+  progressCurrent: number;
+  progressTotal: number;
   runCount: number;
   ratio: number;
   onRatioChange: (value: number) => void;
@@ -23,6 +25,8 @@ export function GenerationPanel({
   isRunning,
   lastRunMs,
   progress,
+  progressCurrent,
+  progressTotal,
   runCount,
   ratio,
   onRatioChange,
@@ -78,6 +82,7 @@ export function GenerationPanel({
           <Group justify="space-between">
             <Text size="xs" fw={500}>
               Progression
+              {progressTotal > 0 ? ` (${progressCurrent}/${progressTotal} générations)` : ''}
             </Text>
             <Text size="xs" c="dimmed">
               {Math.round(progress)}%

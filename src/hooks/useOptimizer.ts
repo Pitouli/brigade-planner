@@ -9,6 +9,8 @@ interface UseOptimizerResult {
   isRunning: boolean;
   lastRunMs: number | null;
   progress: number;
+  progressCurrent: number;
+  progressTotal: number;
   parse: (csv: string) => ParsedTable | null;
   generate: (ratio: number, weights: Weights, gaSettings: GaSettings) => void;
   removeRun: (id: number) => void;
@@ -29,6 +31,8 @@ interface WorkerRequest {
 interface WorkerProgressMessage {
   type: 'progress';
   payload: {
+    current: number;
+    total: number;
     progress: number;
   };
 }
@@ -58,6 +62,8 @@ export function useOptimizer(): UseOptimizerResult {
   const [isRunning, setIsRunning] = useState(false);
   const [lastRunMs, setLastRunMs] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
+  const [progressCurrent, setProgressCurrent] = useState(0);
+  const [progressTotal, setProgressTotal] = useState(0);
   const workerRef = useRef<Worker | null>(null);
 
   useEffect(() => {
@@ -71,6 +77,8 @@ export function useOptimizer(): UseOptimizerResult {
       const { data } = event;
       if (data.type === 'progress') {
         setProgress(data.payload.progress);
+        setProgressCurrent(data.payload.current);
+        setProgressTotal(data.payload.total);
         return;
       }
 
@@ -78,6 +86,8 @@ export function useOptimizer(): UseOptimizerResult {
         setIsRunning(false);
         setParseError(data.payload.message);
         setProgress(0);
+        setProgressCurrent(0);
+        setProgressTotal(0);
         return;
       }
 
@@ -94,6 +104,8 @@ export function useOptimizer(): UseOptimizerResult {
     worker.onerror = () => {
       setIsRunning(false);
       setParseError('Le calcul génétique a échoué dans le worker.');
+      setProgressCurrent(0);
+      setProgressTotal(0);
     };
 
     workerRef.current = worker;
@@ -123,6 +135,8 @@ export function useOptimizer(): UseOptimizerResult {
 
       const previousGenomes = history.map((h) => h.genome);
       setProgress(0);
+      setProgressCurrent(0);
+      setProgressTotal(gaSettings.generations);
       setIsRunning(true);
       const request: WorkerRequest = {
         type: 'run',
@@ -153,5 +167,7 @@ export function useOptimizer(): UseOptimizerResult {
     generate,
     removeRun,
     clearHistory,
+    progressCurrent,
+    progressTotal,
   };
 }

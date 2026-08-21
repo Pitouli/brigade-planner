@@ -8,7 +8,7 @@ describe('parseTable', () => {
     const parsed = parseTable(EXAMPLE_CSV);
     expect(parsed.participants.length).toBeGreaterThan(0);
     expect(parsed.meals.length).toBeGreaterThan(0);
-    expect(parsed.participants[0].name).toBe('JB');
+    expect(parsed.participants[0].name).toBe('Armand');
   });
 
   it('assigns increasing day numbers starting from breakfast meals', () => {

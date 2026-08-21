@@ -104,14 +104,14 @@ export interface OptimizationRun {
 }
 
 export const DEFAULT_WEIGHTS: Weights = {
-  targetPerson: 1,
-  sameDay: 3,
-  firstLast: 2,
-  horaire: 1.5,
-  chefJamais: 3,
-  chefUnefois: 2,
-  chefToujours: 1,
-  novelty: 0.6,
+  targetPerson: 10,
+  sameDay: 80,
+  firstLast: 20,
+  horaire: 15,
+  chefJamais: 30,
+  chefUnefois: 20,
+  chefToujours: 10,
+  novelty: 6,
 };
 
 export const DEFAULT_GA_SETTINGS: GaSettings = {

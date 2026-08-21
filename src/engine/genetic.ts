@@ -90,6 +90,8 @@ export function evaluate(
   const violations: EvaluationResult['violations'] = [];
   let score = 0;
 
+  const presenceWeight = (pi: number) => 1 / Math.max(0.5, targets[pi]);
+
   genome.forEach((brigade, mi) => {
     const meal = meals[mi];
     brigade.cooks.forEach((pi) => {
@@ -99,7 +101,7 @@ export function evaluate(
 
       const pref = participants[pi].horaire;
       if (pref !== 'indiff' && pref !== meal.type) {
-        score += weights.horaire;
+        score += weights.horaire * presenceWeight(pi);
         if (detail) {
           violations.push({
             type: 'horaire',
@@ -108,7 +110,7 @@ export function evaluate(
         }
       }
       if (mi === participants[pi].firstIdx) {
-        score += weights.firstLast;
+        score += weights.firstLast * presenceWeight(pi);
         if (detail) {
           violations.push({
             type: 'firstlast',
@@ -117,7 +119,7 @@ export function evaluate(
         }
       }
       if (mi === participants[pi].lastIdx) {
-        score += weights.firstLast;
+        score += weights.firstLast * presenceWeight(pi);
         if (detail) {
           violations.push({
             type: 'firstlast',
@@ -133,7 +135,7 @@ export function evaluate(
     for (const d in perDay[pi]) {
       const c = perDay[pi][d];
       if (c > 1) {
-        score += weights.sameDay * (c - 1);
+        score += weights.sameDay * (c - 1) * presenceWeight(pi);
         if (detail) {
           violations.push({
             type: 'sameday',
@@ -146,7 +148,7 @@ export function evaluate(
 
   participants.forEach((p, pi) => {
     const dev = cookCount[pi] - targets[pi];
-    score += weights.targetPerson * dev * dev;
+    score += weights.targetPerson * dev * dev * presenceWeight(pi);
     if (detail && Math.abs(dev) >= 1) {
       violations.push({
         type: 'target',
@@ -157,7 +159,7 @@ export function evaluate(
 
   participants.forEach((p, pi) => {
     if (p.chef === 'jamais' && chefCount[pi] > 0) {
-      score += weights.chefJamais * chefCount[pi];
+      score += weights.chefJamais * chefCount[pi] * presenceWeight(pi);
       if (detail) {
         violations.push({
           type: 'chef',
@@ -166,7 +168,7 @@ export function evaluate(
       }
     } else if (p.chef === 'unefois') {
       const dev = chefCount[pi] - 1;
-      score += weights.chefUnefois * dev * dev;
+      score += weights.chefUnefois * dev * dev * presenceWeight(pi);
       if (detail && dev !== 0) {
         violations.push({
           type: 'chef',
@@ -174,13 +176,13 @@ export function evaluate(
         });
       }
     } else if (p.chef === 'toujours') {
-      const missed = cookCount[pi] - chefCount[pi];
-      if (missed > 0) {
-        score += weights.chefToujours * missed;
+      const missingMinimum = cookCount[pi] > 0 && chefCount[pi] === 0;
+      if (missingMinimum) {
+        score += weights.chefToujours * presenceWeight(pi);
         if (detail) {
           violations.push({
             type: 'chef',
-            text: `${p.name} veut TOUJOURS cheffer, mais est simple tâcheron ${missed} fois`,
+            text: `${p.name} a répondu « TOUJOURS » mais n’est jamais chef ; objectif minimum : 1 fois`,
           });
         }
       }
@@ -206,10 +208,20 @@ export function evaluate(
     if (imbalance > 0) {
       score += weights.chefToujours * imbalance;
       if (detail) {
-        const names = alwaysChef.map(({ p }) => p.name).join(', ');
-        violations.push({
-          type: 'chef',
-          text: `Taux de chefferie déséquilibré entre profils « TOUJOURS » (${names}) : ~${(meanRate * 100).toFixed(0)}% attendu en moyenne`,
+        const highest = alwaysChef.reduce((best, current) =>
+          chefCount[current.pi] / cookCount[current.pi] > chefCount[best.pi] / cookCount[best.pi]
+            ? current
+            : best,
+        );
+        alwaysChef.forEach(({ p, pi }) => {
+          const rate = chefCount[pi] / cookCount[pi];
+          const highestRate = chefCount[highest.pi] / cookCount[highest.pi];
+          if (chefCount[pi] === 0 || highestRate - rate >= 0.25) {
+            violations.push({
+              type: 'chef',
+              text: `${p.name} est anormalement moins chef que ${highest.p.name} parmi les profils « TOUJOURS » (${chefCount[pi]}/${cookCount[pi]} vs ${chefCount[highest.pi]}/${cookCount[highest.pi]})`,
+            });
+          }
         });
       }
     }

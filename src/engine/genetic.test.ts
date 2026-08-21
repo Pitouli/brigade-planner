@@ -166,7 +166,85 @@ describe('genetic immutable placements', () => {
     expect(r2.cookCount.slice(0, 2)).toEqual([4, 2]);
     expect(r1.score).toBeGreaterThan(r2.score);
     expect(
-      r1.violations.some((v) => v.type === 'chef' && v.text.includes('Taux de chefferie')),
+      r1.violations.some((v) => v.type === 'chef' && v.text.includes('anormalement moins chef')),
     ).toBe(true);
+  });
+
+  it('penalizes the same task-count deviation more for lower attendance participants', () => {
+    const parsed: ParsedTable = {
+      delim: ';',
+      meals: Array.from({ length: 8 }, (_, i) => ({
+        label: `R${i + 1}`,
+        type: i % 2 === 0 ? 'dej' : 'diner',
+        col: i,
+        day: i,
+      })),
+      participants: [
+        {
+          name: 'Alice',
+          horaire: 'indiff',
+          chef: 'indiff',
+          exempt: false,
+          attends: [true, true, false, false, false, false, false, false],
+          mealIdx: [0, 1],
+          miamCount: 2,
+          firstIdx: 0,
+          lastIdx: 1,
+          immutable: [],
+        },
+        {
+          name: 'Bob',
+          horaire: 'indiff',
+          chef: 'indiff',
+          exempt: false,
+          attends: [true, true, true, true, true, true, true, true],
+          mealIdx: [0, 1, 2, 3, 4, 5, 6, 7],
+          miamCount: 8,
+          firstIdx: 0,
+          lastIdx: 7,
+          immutable: [],
+        },
+      ],
+      immutables: [],
+    };
+
+    const model = buildModel(parsed, 0.5);
+    const weights = {
+      ...DEFAULT_WEIGHTS,
+      targetPerson: 1,
+      sameDay: 0,
+      firstLast: 0,
+      horaire: 0,
+      chefJamais: 0,
+      chefUnefois: 0,
+      chefToujours: 0,
+      novelty: 0,
+    };
+
+    const lowAttendanceOverTarget = [
+      { cooks: [0], chef: 0 },
+      { cooks: [0], chef: 0 },
+      { cooks: [1], chef: 1 },
+      { cooks: [1], chef: 1 },
+      { cooks: [1], chef: 1 },
+      { cooks: [1], chef: 1 },
+      { cooks: [], chef: -1 },
+      { cooks: [], chef: -1 },
+    ];
+    const highAttendanceOverTarget = [
+      { cooks: [0], chef: 0 },
+      { cooks: [1], chef: 1 },
+      { cooks: [1], chef: 1 },
+      { cooks: [1], chef: 1 },
+      { cooks: [1], chef: 1 },
+      { cooks: [1], chef: 1 },
+      { cooks: [], chef: -1 },
+      { cooks: [], chef: -1 },
+    ];
+
+    const lowScore = evaluate(lowAttendanceOverTarget, model, parsed, weights, null, false).score;
+    const highScore = evaluate(highAttendanceOverTarget, model, parsed, weights, null, false).score;
+
+    expect(lowScore).toBeGreaterThan(highScore);
   });
 });

@@ -60,4 +60,24 @@ describe('genetic immutable placements', () => {
     expect(parsed.participants[1].immutable).toHaveLength(1);
     expect(model.targets[1]).toBe(1);
   });
+
+  it('reports progress during the GA run', () => {
+    const parsed = parseTable(CSV);
+    const calls: number[] = [];
+
+    runGA(
+      parsed,
+      0.5,
+      DEFAULT_WEIGHTS,
+      { ...DEFAULT_GA_SETTINGS, popSize: 20, generations: 10 },
+      [],
+      (current, total) => {
+        calls.push(Math.round((current / total) * 100));
+      },
+    );
+
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls[0]).toBeGreaterThan(0);
+    expect(calls.at(-1)).toBe(100);
+  });
 });

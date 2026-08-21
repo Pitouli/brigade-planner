@@ -259,6 +259,8 @@ export interface GaResult {
   detail: EvaluationResult;
 }
 
+export type RunProgressCallback = (current: number, total: number) => void;
+
 /** Runs the genetic algorithm and returns the best genome found along with its evaluation detail. */
 export function runGA(
   parsed: ParsedTable,
@@ -266,6 +268,7 @@ export function runGA(
   weights: Weights,
   ga: GaSettings,
   previousGenomes: Genome[],
+  onProgress?: RunProgressCallback,
 ): GaResult {
   const model = buildModel(parsed, ratio);
   const { popSize, generations, mutRate, tournament, elite } = ga;
@@ -278,6 +281,7 @@ export function runGA(
   });
 
   for (let gen = 0; gen < generations; gen++) {
+    onProgress?.(gen + 1, generations);
     scored.sort((a, b) => a.s - b.s);
     const next: Genome[] = [];
     for (let e = 0; e < elite; e++) next.push(scored[e].g);
@@ -288,6 +292,8 @@ export function runGA(
     }
     scored = next.map((g) => ({ g, s: scoreOf(g) }));
   }
+
+  onProgress?.(generations, generations);
 
   scored.sort((a, b) => a.s - b.s);
   const best = scored[0].g;

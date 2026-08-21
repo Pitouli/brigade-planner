@@ -1,4 +1,4 @@
-import { Accordion, Button, Group, Stack, Text, Title } from '@mantine/core';
+import { Accordion, Button, Group, Progress, Stack, Text, Title } from '@mantine/core';
 import { ConstraintsForm } from './ConstraintsForm';
 import type { GaSettings, Weights } from '../engine/types';
 
@@ -6,6 +6,7 @@ interface GenerationPanelProps {
   disabled: boolean;
   isRunning: boolean;
   lastRunMs: number | null;
+  progress: number;
   runCount: number;
   ratio: number;
   onRatioChange: (value: number) => void;
@@ -21,6 +22,7 @@ export function GenerationPanel({
   disabled,
   isRunning,
   lastRunMs,
+  progress,
   runCount,
   ratio,
   onRatioChange,
@@ -70,6 +72,21 @@ export function GenerationPanel({
           </Text>
         )}
       </Group>
+
+      {isRunning && (
+        <Stack gap={4}>
+          <Group justify="space-between">
+            <Text size="xs" fw={500}>
+              Progression
+            </Text>
+            <Text size="xs" c="dimmed">
+              {Math.round(progress)}%
+            </Text>
+          </Group>
+          <Progress value={progress} size="sm" radius="xl" />
+        </Stack>
+      )}
+
       <Text size="xs" c="dimmed">
         Astuce : relance plusieurs fois pour obtenir des alternatives. Toutes sont conservées
         ci-dessous, de la plus récente à la plus ancienne.

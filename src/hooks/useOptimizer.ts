@@ -1,7 +1,6 @@
-import { useCallback, useState } from 'react';
-import { runGA } from '../engine/genetic';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseTable } from '../engine/parseTable';
-import type { GaSettings, OptimizationRun, ParsedTable, Weights } from '../engine/types';
+import type { GaSettings, Genome, OptimizationRun, ParsedTable, Weights } from '../engine/types';
 
 interface UseOptimizerResult {
   parsed: ParsedTable | null;
@@ -9,10 +8,46 @@ interface UseOptimizerResult {
   history: OptimizationRun[];
   isRunning: boolean;
   lastRunMs: number | null;
+  progress: number;
   parse: (csv: string) => ParsedTable | null;
   generate: (ratio: number, weights: Weights, gaSettings: GaSettings) => void;
   removeRun: (id: number) => void;
   clearHistory: () => void;
+}
+
+interface WorkerRequest {
+  type: 'run';
+  payload: {
+    parsed: ParsedTable;
+    ratio: number;
+    weights: Weights;
+    gaSettings: GaSettings;
+    previousGenomes: Genome[];
+  };
+}
+
+interface WorkerProgressMessage {
+  type: 'progress';
+  payload: {
+    progress: number;
+  };
+}
+
+interface WorkerSuccessMessage {
+  type: 'done';
+  payload: {
+    genome: Genome;
+    detail: OptimizationRun['detail'];
+    ratio: number;
+    ms: number;
+  };
+}
+
+interface WorkerErrorMessage {
+  type: 'error';
+  payload: {
+    message: string;
+  };
 }
 
 /** Orchestrates table parsing and genetic-algorithm runs, keeping a history of generated brigades. */
@@ -22,7 +57,51 @@ export function useOptimizer(): UseOptimizerResult {
   const [history, setHistory] = useState<OptimizationRun[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [lastRunMs, setLastRunMs] = useState<number | null>(null);
-  const [runCounter, setRunCounter] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const workerRef = useRef<Worker | null>(null);
+
+  useEffect(() => {
+    const worker = new Worker(new URL('../workers/geneticWorker.ts', import.meta.url), {
+      type: 'module',
+    });
+
+    worker.onmessage = (
+      event: MessageEvent<WorkerProgressMessage | WorkerSuccessMessage | WorkerErrorMessage>,
+    ) => {
+      const { data } = event;
+      if (data.type === 'progress') {
+        setProgress(data.payload.progress);
+        return;
+      }
+
+      if (data.type === 'error') {
+        setIsRunning(false);
+        setParseError(data.payload.message);
+        setProgress(0);
+        return;
+      }
+
+      const { genome, detail, ratio, ms } = data.payload;
+      setHistory((current) => {
+        const nextId = current.reduce((maxId, run) => Math.max(maxId, run.id), 0) + 1;
+        return [{ id: nextId, genome, detail, ratio, ms }, ...current];
+      });
+      setLastRunMs(ms);
+      setProgress(100);
+      setIsRunning(false);
+    };
+
+    worker.onerror = () => {
+      setIsRunning(false);
+      setParseError('Le calcul génétique a échoué dans le worker.');
+    };
+
+    workerRef.current = worker;
+    return () => {
+      worker.terminate();
+      workerRef.current = null;
+    };
+  }, []);
 
   const parse = useCallback((csv: string) => {
     try {
@@ -39,22 +118,19 @@ export function useOptimizer(): UseOptimizerResult {
 
   const generate = useCallback(
     (ratio: number, weights: Weights, gaSettings: GaSettings) => {
-      if (!parsed) return;
+      if (!parsed || !workerRef.current) return;
+      if (isRunning) return;
+
+      const previousGenomes = history.map((h) => h.genome);
+      setProgress(0);
       setIsRunning(true);
-      // yield to the browser so the "running" state paints before the GA blocks the main thread
-      setTimeout(() => {
-        const previousGenomes = history.map((h) => h.genome);
-        const t0 = performance.now();
-        const { genome, detail } = runGA(parsed, ratio, weights, gaSettings, previousGenomes);
-        const ms = Math.round(performance.now() - t0);
-        const nextId = runCounter + 1;
-        setRunCounter(nextId);
-        setHistory((prev) => [{ id: nextId, genome, detail, ratio, ms }, ...prev]);
-        setLastRunMs(ms);
-        setIsRunning(false);
-      }, 30);
+      const request: WorkerRequest = {
+        type: 'run',
+        payload: { parsed, ratio, weights, gaSettings, previousGenomes },
+      };
+      workerRef.current.postMessage(request);
     },
-    [parsed, history, runCounter],
+    [history, isRunning, parsed],
   );
 
   const removeRun = useCallback((id: number) => {
@@ -63,7 +139,7 @@ export function useOptimizer(): UseOptimizerResult {
 
   const clearHistory = useCallback(() => {
     setHistory([]);
-    setRunCounter(0);
+    setProgress(0);
   }, []);
 
   return {
@@ -72,6 +148,7 @@ export function useOptimizer(): UseOptimizerResult {
     history,
     isRunning,
     lastRunMs,
+    progress,
     parse,
     generate,
     removeRun,

@@ -31,6 +31,7 @@ function App() {
     history,
     isRunning,
     lastRunMs,
+    progress,
     parse,
     generate,
     removeRun,
@@ -78,6 +79,7 @@ function App() {
             disabled={!parsed}
             isRunning={isRunning}
             lastRunMs={lastRunMs}
+            progress={progress}
             runCount={history.length}
             ratio={ratio}
             onRatioChange={setRatio}

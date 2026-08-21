@@ -162,7 +162,7 @@ export function ResultCard({ run, parsed, onRemove }: ResultCardProps) {
               </Table.Thead>
               <Table.Tbody>
                 {P.map((p, pi) => {
-                  const target = run.ratio * p.miamCount;
+                  const target = p.exempt ? p.immutable.length : run.ratio * p.miamCount;
                   const cookCount = run.detail.cookCount[pi];
                   const off = Math.abs(cookCount - target) >= 1;
                   const chefCount = run.detail.chefCount[pi];

@@ -32,7 +32,10 @@ export function buildModel(parsed: ParsedTable, ratio: number): Model {
     return Math.max(capped, immutableCooks[i].length);
   });
 
-  const targets = participants.map((p) => ratio * p.miamCount);
+  const targets = participants.map((p) => {
+    if (p.exempt) return p.immutable.length;
+    return ratio * p.miamCount;
+  });
 
   return { mealAttendees, eligibleAttendees, brigadeSize, targets, immutableChef, immutableCooks };
 }

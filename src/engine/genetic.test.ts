@@ -45,4 +45,19 @@ describe('genetic immutable placements', () => {
     expect(genome[1].cooks).toContain(0);
     expect(genome[1].chef).toBe(1);
   });
+
+  it('uses the immutable task count as target for exempted participants', () => {
+    const csv = [
+      'Nom;Horaire;Chefferie;Exempté;Ven. dîner;Sam. déj.;Dim. déj.',
+      'Alice;Dîner;Jamais;FALSE;Miam;Miam;Miam',
+      'Bob;Indifférent;Toujours;TRUE;Miam;Miam;Miam',
+      ';;;;;;Bob',
+    ].join('\n');
+
+    const parsed = parseTable(csv);
+    const model = buildModel(parsed, 0.7);
+
+    expect(parsed.participants[1].immutable).toHaveLength(1);
+    expect(model.targets[1]).toBe(1);
+  });
 });

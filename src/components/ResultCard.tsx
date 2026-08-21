@@ -113,14 +113,12 @@ export function ResultCard({ run, parsed, onRemove }: ResultCardProps) {
                     <Table.Tr key={`${meal.label}-${meal.day}-${meal.type}`}>
                       <Table.Td>
                         <Badge
-                          size="xs"
-                          variant="outline"
+                          size="sm"
+                          variant="filled"
                           color={meal.type === 'dej' ? 'cyan' : 'violet'}
-                          mr={6}
                         >
-                          {meal.type === 'dej' ? 'déj' : 'dîner'}
+                          {meal.label}
                         </Badge>
-                        {meal.label}
                       </Table.Td>
                       <Table.Td>
                         <Text span fw={700} c="orange">

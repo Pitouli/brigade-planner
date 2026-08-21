@@ -28,18 +28,28 @@ export function ParsedPreview({ parsed }: ParsedPreviewProps) {
         Données détectées
       </Title>
 
-      <Table.ScrollContainer minWidth={600}>
+      <Table.ScrollContainer minWidth="100%">
         <Table striped highlightOnHover verticalSpacing={4} fz="xs" style={{ tableLayout: 'auto' }}>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th style={{ whiteSpace: 'nowrap' }}>Nom</Table.Th>
+              <Table.Th
+                style={{
+                  whiteSpace: 'nowrap',
+                  position: 'sticky',
+                  left: 0,
+                  zIndex: 2,
+                  backgroundColor: 'var(--mantine-color-body)',
+                }}
+              >
+                Nom
+              </Table.Th>
               <Table.Th>Horaire</Table.Th>
               <Table.Th>Chefferie</Table.Th>
               {meals.map((meal) => (
                 <Table.Th
                   key={`${meal.label}-${meal.day}-${meal.type}`}
                   ta="center"
-                  style={{ whiteSpace: 'nowrap' }}
+                  style={{ whiteSpace: 'nowrap', minWidth: 70, paddingLeft: 0, paddingRight: 0 }}
                 >
                   <Badge size="xs" variant="light" color={meal.type === 'dej' ? 'cyan' : 'violet'}>
                     {meal.label}
@@ -51,7 +61,16 @@ export function ParsedPreview({ parsed }: ParsedPreviewProps) {
           <Table.Tbody>
             {participants.map((p, pi) => (
               <Table.Tr key={p.name}>
-                <Table.Td fw={600} style={{ whiteSpace: 'nowrap' }}>
+                <Table.Td
+                  fw={600}
+                  style={{
+                    whiteSpace: 'nowrap',
+                    position: 'sticky',
+                    left: 0,
+                    zIndex: 1,
+                    backgroundColor: 'var(--mantine-color-body)',
+                  }}
+                >
                   {p.name}
                 </Table.Td>
                 <Table.Td>{p.exempt ? '❌' : HORAIRE_LABEL[p.horaire]}</Table.Td>

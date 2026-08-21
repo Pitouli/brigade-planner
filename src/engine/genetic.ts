@@ -41,16 +41,34 @@ function randomBrigade(mi: number, model: Model, parsed: ParsedTable): Brigade {
   return { cooks, chef };
 }
 
-export function initGenome(model: Model, parsed: ParsedTable): Genome {
-  return parsed.meals.map((_, i) =>
-    model.brigadeSize[i] === 0 && model.immutableCooks[i].length === 0
+export function initGenome(model: Model, parsed: ParsedTable, firstOptimizableMeal = 1): Genome {
+  const firstOptimizableIndex = Math.max(0, Math.floor(firstOptimizableMeal) - 1);
+  return parsed.meals.map((_, i) => {
+    if (i < firstOptimizableIndex) {
+      return {
+        cooks: model.immutableCooks[i].slice(),
+        chef: model.immutableChef[i] ?? -1,
+      };
+    }
+    return model.brigadeSize[i] === 0 && model.immutableCooks[i].length === 0
       ? { cooks: [], chef: -1 }
-      : randomBrigade(i, model, parsed),
-  );
+      : randomBrigade(i, model, parsed);
+  });
 }
 
 function cloneGenome(genome: Genome): Genome {
   return genome.map((b) => ({ cooks: b.cooks.slice(), chef: b.chef }));
+}
+
+function freezePastMeals(genome: Genome, model: Model, firstOptimizableMeal: number): Genome {
+  const firstOptimizableIndex = Math.max(0, Math.floor(firstOptimizableMeal) - 1);
+  for (let mi = 0; mi < firstOptimizableIndex; mi++) {
+    genome[mi] = {
+      cooks: model.immutableCooks[mi].slice(),
+      chef: model.immutableChef[mi] ?? -1,
+    };
+  }
+  return genome;
 }
 
 function similarity(a: Genome, b: Genome): number {
@@ -237,11 +255,19 @@ export function evaluate(
 }
 
 /** Mutates cooks/chef per meal, never touching the immutable chef/tâcherons forced by the tâcheronnage table. */
-function mutate(genome: Genome, model: Model, parsed: ParsedTable, rate: number): Genome {
+function mutate(
+  genome: Genome,
+  model: Model,
+  parsed: ParsedTable,
+  rate: number,
+  firstOptimizableMeal: number,
+): Genome {
   const g = cloneGenome(genome);
   const { eligibleAttendees, brigadeSize, immutableChef, immutableCooks } = model;
+  const firstOptimizableIndex = Math.max(0, Math.floor(firstOptimizableMeal) - 1);
 
   for (let mi = 0; mi < g.length; mi++) {
+    if (mi < firstOptimizableIndex) continue;
     const forced = immutableCooks[mi];
     if (brigadeSize[mi] === 0 && forced.length === 0) continue;
     if (Math.random() >= rate) continue;
@@ -311,12 +337,12 @@ export function runGA(
   onProgress?: RunProgressCallback,
 ): GaResult {
   const model = buildModel(parsed, ratio);
-  const { popSize, generations, mutRate, tournament, elite } = ga;
+  const { popSize, generations, mutRate, tournament, elite, firstOptimizableMeal = 1 } = ga;
 
   const scoreOf = (g: Genome) => evaluate(g, model, parsed, weights, previousGenomes, false).score;
 
   let scored: ScoredGenome[] = Array.from({ length: popSize }, () => {
-    const g = initGenome(model, parsed);
+    const g = initGenome(model, parsed, firstOptimizableMeal);
     return { g, s: scoreOf(g) };
   });
 
@@ -328,7 +354,8 @@ export function runGA(
     while (next.length < popSize) {
       const p1 = tournamentSelect(scored, tournament);
       const p2 = tournamentSelect(scored, tournament);
-      next.push(mutate(crossover(p1, p2), model, parsed, mutRate));
+      const child = mutate(crossover(p1, p2), model, parsed, mutRate, firstOptimizableMeal);
+      next.push(freezePastMeals(child, model, firstOptimizableMeal));
     }
     scored = next.map((g) => ({ g, s: scoreOf(g) }));
   }

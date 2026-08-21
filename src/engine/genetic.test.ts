@@ -46,6 +46,22 @@ describe('genetic immutable placements', () => {
     expect(genome[1].chef).toBe(1);
   });
 
+  it('keeps only declared past tasks before the first optimizable meal', () => {
+    const parsed = parseTable(CSV);
+
+    const { genome, detail } = runGA(
+      parsed,
+      0.5,
+      DEFAULT_WEIGHTS,
+      { ...DEFAULT_GA_SETTINGS, firstOptimizableMeal: 2, popSize: 20, generations: 5 },
+      [],
+    );
+
+    expect(genome[0]).toEqual({ cooks: [0], chef: 0 });
+    expect(detail.cookCount[0]).toBeGreaterThanOrEqual(1);
+    expect(detail.chefCount[0]).toBeGreaterThanOrEqual(1);
+  });
+
   it('uses the immutable task count as target for exempted participants', () => {
     const csv = [
       'Nom;Horaire;Chefferie;Exempté;Ven. dîner;Sam. déj.;Dim. déj.',

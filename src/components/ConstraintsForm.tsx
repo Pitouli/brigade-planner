@@ -1,7 +1,8 @@
-import { Grid, NumberInput, Stack, Title, Tooltip } from '@mantine/core';
-import type { GaSettings, Weights } from '../engine/types';
+import { Grid, NumberInput, Select, Stack, Title, Tooltip } from '@mantine/core';
+import type { GaSettings, Meal, Weights } from '../engine/types';
 
 interface ConstraintsFormProps {
+  meals: Meal[];
   ratio: number;
   onRatioChange: (value: number) => void;
   weights: Weights;
@@ -11,6 +12,7 @@ interface ConstraintsFormProps {
 }
 
 export function ConstraintsForm({
+  meals,
   ratio,
   onRatioChange,
   weights,
@@ -43,6 +45,8 @@ export function ConstraintsForm({
     mutRate:
       'Probabilité d’introduire une variation pour éviter le blocage sur une solution trop stable.',
     novelty: 'Valeur positive : le moteur favorise les solutions plus différentes des précédentes.',
+    firstOptimizableMeal:
+      'Les repas précédents restent identiques au dernier résultat généré, mais leurs tâches comptent dans l’équilibrage.',
   } as const;
 
   return (
@@ -219,6 +223,30 @@ export function ConstraintsForm({
                 onChange={setWeight('novelty')}
                 step={0.1}
                 min={0}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+      </Grid>
+
+      <Title order={3} size="xs" tt="uppercase" c="dimmed" mt={10} mb={-10}>
+        Divers
+      </Title>
+      <Grid>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.firstOptimizableMeal} multiline w={260} withArrow>
+            <div>
+              <Select
+                label="Optimiser à partir du repas"
+                data={meals.map((meal, index) => ({
+                  value: String(index + 1),
+                  label: `${index + 1}. ${meal.label}`,
+                }))}
+                value={String(gaSettings.firstOptimizableMeal ?? 1)}
+                onChange={(value) => {
+                  if (value !== null) setGa('firstOptimizableMeal')(value);
+                }}
+                allowDeselect={false}
               />
             </div>
           </Tooltip>

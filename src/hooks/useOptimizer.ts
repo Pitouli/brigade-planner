@@ -133,7 +133,7 @@ export function useOptimizer(): UseOptimizerResult {
       if (!parsed || !workerRef.current) return;
       if (isRunning) return;
 
-      const previousGenomes = history.map((h) => h.genome);
+      const previousGenomes = history.map((run) => run.genome);
       setProgress(0);
       setProgressCurrent(0);
       setProgressTotal(gaSettings.generations);

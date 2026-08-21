@@ -78,6 +78,7 @@ function App() {
 
         <Paper withBorder radius="md" p="lg">
           <GenerationPanel
+            meals={parsed?.meals ?? []}
             disabled={!parsed}
             isRunning={isRunning}
             lastRunMs={lastRunMs}

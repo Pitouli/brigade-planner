@@ -1,8 +1,9 @@
 import { Accordion, Button, Group, Progress, Stack, Text, Title } from '@mantine/core';
 import { ConstraintsForm } from './ConstraintsForm';
-import type { GaSettings, Weights } from '../engine/types';
+import type { GaSettings, Meal, Weights } from '../engine/types';
 
 interface GenerationPanelProps {
+  meals: Meal[];
   disabled: boolean;
   isRunning: boolean;
   lastRunMs: number | null;
@@ -21,6 +22,7 @@ interface GenerationPanelProps {
 }
 
 export function GenerationPanel({
+  meals,
   disabled,
   isRunning,
   lastRunMs,
@@ -52,6 +54,7 @@ export function GenerationPanel({
           </Accordion.Control>
           <Accordion.Panel>
             <ConstraintsForm
+              meals={meals}
               ratio={ratio}
               onRatioChange={onRatioChange}
               weights={weights}

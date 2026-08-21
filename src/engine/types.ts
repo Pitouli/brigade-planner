@@ -79,6 +79,8 @@ export interface GaSettings {
   mutRate: number;
   tournament: number;
   elite: number;
+  /** One-based meal number from which the optimizer may change assignments. */
+  firstOptimizableMeal: number;
 }
 
 export interface Violation {
@@ -118,6 +120,7 @@ export const DEFAULT_GA_SETTINGS: GaSettings = {
   mutRate: 0.15,
   tournament: 3,
   elite: 2,
+  firstOptimizableMeal: 1,
 };
 
 export const CHEF_LABEL: Record<ChefPref, string> = {

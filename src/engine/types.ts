@@ -1,0 +1,112 @@
+export type MealType = 'dej' | 'diner';
+export type HorairePref = 'dej' | 'diner' | 'indiff';
+export type ChefPref = 'jamais' | 'unefois' | 'toujours' | 'indiff';
+export type ViolationType = 'horaire' | 'firstlast' | 'sameday' | 'target' | 'chef';
+
+export interface Meal {
+  label: string;
+  type: MealType;
+  col: number;
+  day: number;
+}
+
+export interface Participant {
+  name: string;
+  horaire: HorairePref;
+  chef: ChefPref;
+  attends: boolean[];
+  mealIdx: number[];
+  miamCount: number;
+  firstIdx: number;
+  lastIdx: number;
+}
+
+export interface ParsedTable {
+  meals: Meal[];
+  participants: Participant[];
+  delim: string;
+}
+
+export interface Model {
+  mealAttendees: number[][];
+  brigadeSize: number[];
+  targets: number[];
+}
+
+export interface Brigade {
+  cooks: number[];
+  chef: number;
+}
+
+export type Genome = Brigade[];
+
+export interface Weights {
+  targetPerson: number;
+  sameDay: number;
+  firstLast: number;
+  horaire: number;
+  chefJamais: number;
+  chefUnefois: number;
+  chefToujours: number;
+  novelty: number;
+}
+
+export interface GaSettings {
+  popSize: number;
+  generations: number;
+  mutRate: number;
+  tournament: number;
+  elite: number;
+}
+
+export interface Violation {
+  type: ViolationType;
+  text: string;
+}
+
+export interface EvaluationResult {
+  score: number;
+  violations: Violation[];
+  cookCount: number[];
+  chefCount: number[];
+}
+
+export interface OptimizationRun {
+  id: number;
+  genome: Genome;
+  detail: EvaluationResult;
+  ratio: number;
+  ms: number;
+}
+
+export const DEFAULT_WEIGHTS: Weights = {
+  targetPerson: 1,
+  sameDay: 3,
+  firstLast: 2,
+  horaire: 1.5,
+  chefJamais: 3,
+  chefUnefois: 2,
+  chefToujours: 1,
+  novelty: 0.6,
+};
+
+export const DEFAULT_GA_SETTINGS: GaSettings = {
+  popSize: 140,
+  generations: 350,
+  mutRate: 0.15,
+  tournament: 3,
+  elite: 2,
+};
+
+export const CHEF_LABEL: Record<ChefPref, string> = {
+  jamais: 'Jamais',
+  unefois: 'Une fois',
+  toujours: 'Toujours',
+  indiff: 'Indifférent',
+};
+
+export const HORAIRE_LABEL: Record<HorairePref, string> = {
+  dej: 'Midi',
+  diner: 'Soir',
+  indiff: 'Indiff.',
+};

@@ -23,7 +23,7 @@ export function DataInput({ csv, onCsvChange, parsed, parseError, onParse }: Dat
   return (
     <Stack gap="sm">
       <Title order={2} size="h4">
-        1. Données des participants
+        Données des participants
       </Title>
       <Text size="sm" c="dimmed">
         Colle depuis un tableur (séparateur Tab, ;, , ou | — auto-détecté). Colonnes attendues :{' '}

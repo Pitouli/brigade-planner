@@ -1,6 +1,5 @@
 import { Container, Paper, Stack, Text, Title } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { ConstraintsForm } from './components/ConstraintsForm';
 import { DataInput } from './components/DataInput';
 import { GenerationPanel } from './components/GenerationPanel';
 import { ResultCard } from './components/ResultCard';
@@ -75,22 +74,17 @@ function App() {
         </Paper>
 
         <Paper withBorder radius="md" p="lg">
-          <ConstraintsForm
+          <GenerationPanel
+            disabled={!parsed}
+            isRunning={isRunning}
+            lastRunMs={lastRunMs}
+            runCount={history.length}
             ratio={ratio}
             onRatioChange={setRatio}
             weights={weights}
             onWeightsChange={setWeights}
             gaSettings={gaSettings}
             onGaSettingsChange={setGaSettings}
-          />
-        </Paper>
-
-        <Paper withBorder radius="md" p="lg">
-          <GenerationPanel
-            disabled={!parsed}
-            isRunning={isRunning}
-            lastRunMs={lastRunMs}
-            runCount={history.length}
             onGenerate={handleGenerate}
             onClearHistory={clearHistory}
           />

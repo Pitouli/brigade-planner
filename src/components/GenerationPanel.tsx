@@ -1,10 +1,18 @@
-import { Button, Group, Stack, Text, Title } from '@mantine/core';
+import { Accordion, Button, Group, Stack, Text, Title } from '@mantine/core';
+import { ConstraintsForm } from './ConstraintsForm';
+import type { GaSettings, Weights } from '../engine/types';
 
 interface GenerationPanelProps {
   disabled: boolean;
   isRunning: boolean;
   lastRunMs: number | null;
   runCount: number;
+  ratio: number;
+  onRatioChange: (value: number) => void;
+  weights: Weights;
+  onWeightsChange: (weights: Weights) => void;
+  gaSettings: GaSettings;
+  onGaSettingsChange: (settings: GaSettings) => void;
   onGenerate: () => void;
   onClearHistory: () => void;
 }
@@ -14,14 +22,41 @@ export function GenerationPanel({
   isRunning,
   lastRunMs,
   runCount,
+  ratio,
+  onRatioChange,
+  weights,
+  onWeightsChange,
+  gaSettings,
+  onGaSettingsChange,
   onGenerate,
   onClearHistory,
 }: GenerationPanelProps) {
   return (
     <Stack gap="sm">
       <Title order={2} size="h4">
-        3. Génération
+        Génération
       </Title>
+
+      <Accordion variant="separated">
+        <Accordion.Item value="advanced">
+          <Accordion.Control>
+            <Text size="sm" fw={500}>
+              Réglages avancés
+            </Text>
+          </Accordion.Control>
+          <Accordion.Panel>
+            <ConstraintsForm
+              ratio={ratio}
+              onRatioChange={onRatioChange}
+              weights={weights}
+              onWeightsChange={onWeightsChange}
+              gaSettings={gaSettings}
+              onGaSettingsChange={onGaSettingsChange}
+            />
+          </Accordion.Panel>
+        </Accordion.Item>
+      </Accordion>
+
       <Group>
         <Button onClick={onGenerate} loading={isRunning} disabled={disabled}>
           🎲 Générer une répartition

@@ -1,4 +1,4 @@
-import { Accordion, Grid, NumberInput, Stack, Title } from '@mantine/core';
+import { Grid, NumberInput, Stack, Title, Tooltip } from '@mantine/core';
 import type { GaSettings, Weights } from '../engine/types';
 
 interface ConstraintsFormProps {
@@ -23,150 +23,207 @@ export function ConstraintsForm({
   const setGa = (key: keyof GaSettings) => (value: number | string) =>
     onGaSettingsChange({ ...gaSettings, [key]: Number(value) });
 
+  const tooltips = {
+    ratio:
+      'Nombre de corvées estimé à partir du ratio pour garder un équilibre proche du nombre de miams.',
+    sameDay: 'Pénalité élevée pour éviter qu’une personne ait deux tâches le même jour.',
+    firstLast: 'Réduit les répartitions trop lourdes au premier ou au dernier repas de la journée.',
+    horaire:
+      'Aide à mieux correspondre les rôles aux créneaux de repas selon les préférences de service.',
+    chefJamais:
+      'Pénalité appliquée quand une personne a indiqué qu’elle ne veut jamais prendre le rôle de chef.',
+    chefUnefois:
+      'Encourage une distribution plus équilibrée entre les personnes qui souhaitent être chef une seule fois.',
+    chefToujours:
+      'Pèse la préférence des personnes qui veulent éviter le rôle de chef à chaque repas.',
+    targetPerson:
+      'Aide à tendre la répartition vers l’objectif cible tout en respectant les préférences individuelles.',
+    popSize: 'Taille de la population générée à chaque étape de l’algorithme.',
+    generations: 'Nombre d’itérations de recherche pour continuer à améliorer la solution.',
+    mutRate:
+      'Probabilité d’introduire une variation pour éviter le blocage sur une solution trop stable.',
+    novelty: 'Valeur positive : le moteur favorise les solutions plus différentes des précédentes.',
+  } as const;
+
   return (
-    <Stack gap="sm">
-      <Title order={2} size="h4">
-        2. Contraintes &amp; objectifs
+    <Stack gap="md">
+      <Title order={3} size="xs" tt="uppercase" c="dimmed" mb={-10}>
+        Paramètres de répartition
       </Title>
       <Grid>
         <Grid.Col span={{ base: 6, sm: 3 }}>
-          <NumberInput
-            label="Tâcheronnages cible « par miam »"
-            description="Nb de corvées ≈ ratio × nb de miams"
-            value={ratio}
-            onChange={(v) => onRatioChange(Number(v))}
-            step={0.05}
-            min={0.05}
-            max={1}
-            decimalScale={2}
-          />
+          <Tooltip label={tooltips.ratio} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="Tâcheronnages cible « par miam »"
+                value={ratio}
+                onChange={(v) => onRatioChange(Number(v))}
+                step={0.05}
+                min={0.05}
+                max={1}
+                decimalScale={2}
+              />
+            </div>
+          </Tooltip>
         </Grid.Col>
         <Grid.Col span={{ base: 6, sm: 3 }}>
-          <NumberInput
-            label="Éviter 2 corvées le même jour"
-            value={weights.sameDay}
-            onChange={setWeight('sameDay')}
-            step={0.5}
-            min={0}
-          />
+          <Tooltip label={tooltips.sameDay} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="Éviter 2 corvées le même jour"
+                value={weights.sameDay}
+                onChange={setWeight('sameDay')}
+                step={0.5}
+                min={0}
+              />
+            </div>
+          </Tooltip>
         </Grid.Col>
         <Grid.Col span={{ base: 6, sm: 3 }}>
-          <NumberInput
-            label="Éviter 1er / dernier repas"
-            value={weights.firstLast}
-            onChange={setWeight('firstLast')}
-            step={0.5}
-            min={0}
-          />
+          <Tooltip label={tooltips.firstLast} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="Éviter 1er / dernier repas"
+                value={weights.firstLast}
+                onChange={setWeight('firstLast')}
+                step={0.5}
+                min={0}
+              />
+            </div>
+          </Tooltip>
         </Grid.Col>
         <Grid.Col span={{ base: 6, sm: 3 }}>
-          <NumberInput
-            label="Respect horaire (midi/soir)"
-            value={weights.horaire}
-            onChange={setWeight('horaire')}
-            step={0.5}
-            min={0}
-          />
+          <Tooltip label={tooltips.horaire} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="Respect horaire (midi/soir)"
+                value={weights.horaire}
+                onChange={setWeight('horaire')}
+                step={0.5}
+                min={0}
+              />
+            </div>
+          </Tooltip>
         </Grid.Col>
       </Grid>
 
-      <Accordion variant="separated">
-        <Accordion.Item value="advanced">
-          <Accordion.Control>
-            ⚙️ Réglages avancés (poids des préférences &amp; algorithme génétique)
-          </Accordion.Control>
-          <Accordion.Panel>
-            <Stack gap="md">
-              <Title order={3} size="xs" tt="uppercase" c="dimmed">
-                Poids des préférences de chefferie
-              </Title>
-              <Grid>
-                <Grid.Col span={{ base: 6, sm: 3 }}>
-                  <NumberInput
-                    label="« Jamais » forcé à cheffer"
-                    value={weights.chefJamais}
-                    onChange={setWeight('chefJamais')}
-                    step={0.5}
-                    min={0}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 6, sm: 3 }}>
-                  <NumberInput
-                    label="« Une fois » (écart à 1)"
-                    value={weights.chefUnefois}
-                    onChange={setWeight('chefUnefois')}
-                    step={0.5}
-                    min={0}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 6, sm: 3 }}>
-                  <NumberInput
-                    label="« Toujours » non-chef"
-                    value={weights.chefToujours}
-                    onChange={setWeight('chefToujours')}
-                    step={0.5}
-                    min={0}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 6, sm: 3 }}>
-                  <NumberInput
-                    label="Équilibrage cible/personne"
-                    value={weights.targetPerson}
-                    onChange={setWeight('targetPerson')}
-                    step={0.5}
-                    min={0}
-                  />
-                </Grid.Col>
-              </Grid>
+      <Title order={3} size="xs" tt="uppercase" c="dimmed" mt={10} mb={-10}>
+        Poids des préférences de chefferie
+      </Title>
+      <Grid>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.chefJamais} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="« Jamais » forcé à cheffer"
+                value={weights.chefJamais}
+                onChange={setWeight('chefJamais')}
+                step={0.5}
+                min={0}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.chefUnefois} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="« Une fois » (écart à 1)"
+                value={weights.chefUnefois}
+                onChange={setWeight('chefUnefois')}
+                step={0.5}
+                min={0}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.chefToujours} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="« Toujours » non-chef"
+                value={weights.chefToujours}
+                onChange={setWeight('chefToujours')}
+                step={0.5}
+                min={0}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.targetPerson} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="Équilibrage cible/personne"
+                value={weights.targetPerson}
+                onChange={setWeight('targetPerson')}
+                step={0.5}
+                min={0}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+      </Grid>
 
-              <Title order={3} size="xs" tt="uppercase" c="dimmed">
-                Algorithme génétique
-              </Title>
-              <Grid>
-                <Grid.Col span={{ base: 6, sm: 3 }}>
-                  <NumberInput
-                    label="Population"
-                    value={gaSettings.popSize}
-                    onChange={setGa('popSize')}
-                    step={10}
-                    min={20}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 6, sm: 3 }}>
-                  <NumberInput
-                    label="Générations"
-                    value={gaSettings.generations}
-                    onChange={setGa('generations')}
-                    step={50}
-                    min={50}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 6, sm: 3 }}>
-                  <NumberInput
-                    label="Taux de mutation"
-                    value={gaSettings.mutRate}
-                    onChange={setGa('mutRate')}
-                    step={0.05}
-                    min={0}
-                    max={1}
-                    decimalScale={2}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 6, sm: 3 }}>
-                  <NumberInput
-                    label="Nouveauté vs alternatives"
-                    description="> 0 : pousse les nouvelles générations à différer"
-                    value={weights.novelty}
-                    onChange={setWeight('novelty')}
-                    step={0.1}
-                    min={0}
-                  />
-                </Grid.Col>
-              </Grid>
-            </Stack>
-          </Accordion.Panel>
-        </Accordion.Item>
-      </Accordion>
+      <Title order={3} size="xs" tt="uppercase" c="dimmed" mt={10} mb={-10}>
+        Algorithme génétique
+      </Title>
+      <Grid>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.popSize} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="Population"
+                value={gaSettings.popSize}
+                onChange={setGa('popSize')}
+                step={10}
+                min={20}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.generations} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="Générations"
+                value={gaSettings.generations}
+                onChange={setGa('generations')}
+                step={50}
+                min={50}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.mutRate} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="Taux de mutation"
+                value={gaSettings.mutRate}
+                onChange={setGa('mutRate')}
+                step={0.05}
+                min={0}
+                max={1}
+                decimalScale={2}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.novelty} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="Nouveauté vs alternatives"
+                value={weights.novelty}
+                onChange={setWeight('novelty')}
+                step={0.1}
+                min={0}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+      </Grid>
     </Stack>
   );
 }

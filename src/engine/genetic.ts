@@ -1,6 +1,7 @@
 import { buildModel } from './model';
 import type {
   Brigade,
+  BrigadeAlgoSettings,
   EvaluationResult,
   GaSettings,
   Genome,
@@ -90,6 +91,15 @@ function similarity(a: Genome, b: Genome): number {
   return n ? sum / n : 0;
 }
 
+/** Variance of the gaps between consecutive positions ; 0 means perfectly even spacing. */
+function gapVariance(positions: number[]): number {
+  if (positions.length < 2) return 0;
+  const gaps: number[] = [];
+  for (let i = 1; i < positions.length; i++) gaps.push(positions[i] - positions[i - 1]);
+  const mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+  return gaps.reduce((a, g) => a + (g - mean) ** 2, 0) / gaps.length;
+}
+
 export function evaluate(
   genome: Genome,
   model: Model,
@@ -105,6 +115,16 @@ export function evaluate(
   const cookCount = new Array(P).fill(0);
   const chefCount = new Array(P).fill(0);
   const perDay: Record<number, number>[] = participants.map(() => ({}));
+  // Position of each task within the participant's own attended-meals sequence, in chronological order.
+  const taskPositions: number[][] = participants.map(() => []);
+  const chefFlags: boolean[][] = participants.map(() => []);
+  const mealPositionByParticipant: Map<number, number>[] = participants.map((p) => {
+    const m = new Map<number, number>();
+    p.mealIdx.forEach((mi, idx) => {
+      m.set(mi, idx);
+    });
+    return m;
+  });
   const violations: EvaluationResult['violations'] = [];
   let score = 0;
 
@@ -116,6 +136,8 @@ export function evaluate(
       cookCount[pi]++;
       const d = meal.day;
       perDay[pi][d] = (perDay[pi][d] || 0) + 1;
+      taskPositions[pi].push(mealPositionByParticipant[pi].get(mi) ?? 0);
+      chefFlags[pi].push(brigade.chef === pi);
 
       const pref = participants[pi].horaire;
       if (pref !== 'indiff' && pref !== meal.type) {
@@ -174,6 +196,36 @@ export function evaluate(
       });
     }
   });
+
+  if (weights.spreadTasks > 0) {
+    participants.forEach((p, pi) => {
+      const positions = taskPositions[pi];
+      const taskVariance = gapVariance(positions);
+      if (taskVariance > 0) {
+        score += weights.spreadTasks * taskVariance * presenceWeight(pi);
+        if (detail) {
+          violations.push({
+            type: 'spread',
+            text: `${p.name} : tâches peu étalées dans le temps (variance des écarts ${taskVariance.toFixed(2)})`,
+          });
+        }
+      }
+
+      const chefIndexes = chefFlags[pi]
+        .map((isChef, idx) => (isChef ? idx : -1))
+        .filter((idx) => idx >= 0);
+      const chefVariance = gapVariance(chefIndexes);
+      if (chefVariance > 0) {
+        score += weights.spreadTasks * chefVariance * presenceWeight(pi);
+        if (detail) {
+          violations.push({
+            type: 'spread',
+            text: `${p.name} : jours de chefferie mal étalés parmi ses tâches (variance ${chefVariance.toFixed(2)})`,
+          });
+        }
+      }
+    });
+  }
 
   participants.forEach((p, pi) => {
     if (p.chef === 'jamais' && chefCount[pi] > 0) {
@@ -251,7 +303,7 @@ export function evaluate(
     score += weights.novelty * (sum / previousGenomes.length) * genome.length;
   }
 
-  return { score, violations, cookCount, chefCount };
+  return { score, violations, cookCount, chefCount, targets };
 }
 
 /** Mutates cooks/chef per meal, never touching the immutable chef/tâcherons forced by the tâcheronnage table. */
@@ -330,13 +382,13 @@ export type RunProgressCallback = (current: number, total: number) => void;
 /** Runs the genetic algorithm and returns the best genome found along with its evaluation detail. */
 export function runGA(
   parsed: ParsedTable,
-  ratio: number,
+  algo: BrigadeAlgoSettings,
   weights: Weights,
   ga: GaSettings,
   previousGenomes: Genome[],
   onProgress?: RunProgressCallback,
 ): GaResult {
-  const model = buildModel(parsed, ratio);
+  const model = buildModel(parsed, algo, ga.firstOptimizableMeal ?? 1);
   const { popSize, generations, mutRate, tournament, elite, firstOptimizableMeal = 1 } = ga;
 
   const scoreOf = (g: Genome) => evaluate(g, model, parsed, weights, previousGenomes, false).score;

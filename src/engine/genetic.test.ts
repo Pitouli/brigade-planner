@@ -2,7 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { evaluate, initGenome, runGA } from './genetic';
 import { buildModel } from './model';
 import { parseTable } from './parseTable';
-import { DEFAULT_GA_SETTINGS, DEFAULT_WEIGHTS, type ParsedTable } from './types';
+import {
+  type BrigadeAlgoSettings,
+  DEFAULT_GA_SETTINGS,
+  DEFAULT_WEIGHTS,
+  type ParsedTable,
+} from './types';
+
+const algo = (paramX: number): BrigadeAlgoSettings => ({
+  formula: 'linear',
+  paramX,
+  minTacherons: 0,
+  maxTacherons: 100,
+});
 
 const CSV = [
   'Nom;Horaire;Chefferie;Ven. dîner;Sam. déj.',
@@ -17,7 +29,7 @@ const CSV = [
 describe('genetic immutable placements', () => {
   it('keeps the immutable chef/tâcheron in every initGenome() output', () => {
     const parsed = parseTable(CSV);
-    const model = buildModel(parsed, 0.5);
+    const model = buildModel(parsed, algo(0.5));
     for (let i = 0; i < 20; i++) {
       const genome = initGenome(model, parsed);
       // Ven. dîner (meal 0): Alice is chef
@@ -34,7 +46,7 @@ describe('genetic immutable placements', () => {
     const parsed = parseTable(CSV);
     const { genome } = runGA(
       parsed,
-      0.5,
+      algo(0.5),
       DEFAULT_WEIGHTS,
       { ...DEFAULT_GA_SETTINGS, popSize: 20, generations: 15 },
       [],
@@ -51,7 +63,7 @@ describe('genetic immutable placements', () => {
 
     const { genome, detail } = runGA(
       parsed,
-      0.5,
+      algo(0.5),
       DEFAULT_WEIGHTS,
       { ...DEFAULT_GA_SETTINGS, firstOptimizableMeal: 2, popSize: 20, generations: 5 },
       [],
@@ -71,7 +83,7 @@ describe('genetic immutable placements', () => {
     ].join('\n');
 
     const parsed = parseTable(csv);
-    const model = buildModel(parsed, 0.7);
+    const model = buildModel(parsed, algo(0.7));
 
     expect(parsed.participants[1].immutable).toHaveLength(1);
     expect(model.targets[1]).toBe(1);
@@ -83,7 +95,7 @@ describe('genetic immutable placements', () => {
 
     runGA(
       parsed,
-      0.5,
+      algo(0.5),
       DEFAULT_WEIGHTS,
       { ...DEFAULT_GA_SETTINGS, popSize: 20, generations: 10 },
       [],
@@ -147,7 +159,7 @@ describe('genetic immutable placements', () => {
       immutables: [],
     };
 
-    const model = buildModel(parsed, 0.5);
+    const model = buildModel(parsed, algo(0.5));
     const weights = {
       ...DEFAULT_WEIGHTS,
       targetPerson: 0,
@@ -157,6 +169,7 @@ describe('genetic immutable placements', () => {
       chefJamais: 0,
       chefUnefois: 0,
       novelty: 0,
+      spreadTasks: 0,
       chefToujours: 1,
     };
 
@@ -224,7 +237,7 @@ describe('genetic immutable placements', () => {
       immutables: [],
     };
 
-    const model = buildModel(parsed, 0.5);
+    const model = buildModel(parsed, algo(0.5));
     const weights = {
       ...DEFAULT_WEIGHTS,
       targetPerson: 1,
@@ -235,6 +248,7 @@ describe('genetic immutable placements', () => {
       chefUnefois: 0,
       chefToujours: 0,
       novelty: 0,
+      spreadTasks: 0,
     };
 
     const lowAttendanceOverTarget = [

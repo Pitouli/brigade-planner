@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import type { OptimizationRun, ParsedTable } from '../engine/types';
+import type { BrigadeAlgoSettings, OptimizationRun, ParsedTable } from '../engine/types';
 import { runToText } from './export';
+
+const algoSettings: BrigadeAlgoSettings = {
+  formula: 'linear',
+  paramX: 1,
+  minTacherons: 0,
+  maxTacherons: 100,
+};
 
 describe('runToText', () => {
   it('returns a table formatted for Excel paste with chefs on the first row and names only', () => {
@@ -65,7 +72,7 @@ describe('runToText', () => {
 
     const run: OptimizationRun = {
       id: 7,
-      ratio: 1,
+      algoSettings,
       ms: 12,
       genome: [
         { chef: 0, cooks: [0, 1, 2] },
@@ -76,6 +83,7 @@ describe('runToText', () => {
         violations: [],
         cookCount: [3, 2],
         chefCount: [1, 1],
+        targets: [3, 2, 2, 2],
       },
     };
 
@@ -127,14 +135,14 @@ describe('runToText', () => {
     };
     const run: OptimizationRun = {
       id: 8,
-      ratio: 1,
+      algoSettings,
       ms: 12,
       genome: [
         { chef: -1, cooks: [] },
         { chef: 0, cooks: [0] },
         { chef: 1, cooks: [1] },
       ],
-      detail: { score: 0, violations: [], cookCount: [1, 1], chefCount: [1, 1] },
+      detail: { score: 0, violations: [], cookCount: [1, 1], chefCount: [1, 1], targets: [1, 1] },
     };
 
     expect(runToText(run, parsed)).toBe('\tAlice\tBob');

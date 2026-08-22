@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { EXAMPLE_CSV } from '../data/exampleCsv';
 import { buildModel } from './model';
 import { parseTable } from './parseTable';
+import type { BrigadeAlgoSettings } from './types';
+
+const algo: BrigadeAlgoSettings = {
+  formula: 'linear',
+  paramX: 0.4,
+  minTacherons: 0,
+  maxTacherons: 100,
+};
 
 describe('parseTable', () => {
   it('parses participants, meals and attendance', () => {
@@ -93,7 +101,7 @@ describe('parseTable', () => {
 describe('buildModel', () => {
   it('computes brigade sizes proportional to attendance and ratio', () => {
     const parsed = parseTable(EXAMPLE_CSV);
-    const model = buildModel(parsed, 0.4);
+    const model = buildModel(parsed, algo);
     model.brigadeSize.forEach((size, i) => {
       const attendeeCount = model.mealAttendees[i].length;
       if (attendeeCount === 0) {

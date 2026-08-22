@@ -1,8 +1,9 @@
 export type MealType = 'dej' | 'diner';
 export type HorairePref = 'dej' | 'diner' | 'indiff';
 export type ChefPref = 'jamais' | 'unefois' | 'toujours' | 'indiff';
-export type ViolationType = 'horaire' | 'firstlast' | 'sameday' | 'target' | 'chef';
+export type ViolationType = 'horaire' | 'firstlast' | 'sameday' | 'target' | 'chef' | 'spread';
 export type ImmutableRole = 'chef' | 'tacheron';
+export type BrigadeFormula = 'linear' | 'power';
 
 export interface Meal {
   label: string;
@@ -44,6 +45,14 @@ export interface ParsedTable {
   immutables: ImmutableAssignment[];
 }
 
+/** Settings driving the per-meal tâcheronnage headcount ; replaces the old flat « ratio » field. */
+export interface BrigadeAlgoSettings {
+  formula: BrigadeFormula;
+  paramX: number;
+  minTacherons: number;
+  maxTacherons: number;
+}
+
 export interface Model {
   mealAttendees: number[][];
   eligibleAttendees: number[][];
@@ -71,6 +80,7 @@ export interface Weights {
   chefUnefois: number;
   chefToujours: number;
   novelty: number;
+  spreadTasks: number;
 }
 
 export interface GaSettings {
@@ -93,13 +103,14 @@ export interface EvaluationResult {
   violations: Violation[];
   cookCount: number[];
   chefCount: number[];
+  targets: number[];
 }
 
 export interface OptimizationRun {
   id: number;
   genome: Genome;
   detail: EvaluationResult;
-  ratio: number;
+  algoSettings: BrigadeAlgoSettings;
   ms: number;
 }
 
@@ -112,6 +123,20 @@ export const DEFAULT_WEIGHTS: Weights = {
   chefUnefois: 20,
   chefToujours: 10,
   novelty: 6,
+  spreadTasks: 10,
+};
+
+/** Default « Paramètre X » per formule (0.4 for x*MIAMs, 2 for MIAMs^(1/x) i.e. sqrt). */
+export const BRIGADE_FORMULA_PARAM_DEFAULTS: Record<BrigadeFormula, number> = {
+  linear: 0.4,
+  power: 2,
+};
+
+export const DEFAULT_BRIGADE_ALGO_SETTINGS: BrigadeAlgoSettings = {
+  formula: 'power',
+  paramX: BRIGADE_FORMULA_PARAM_DEFAULTS.power,
+  minTacherons: 0,
+  maxTacherons: 100,
 };
 
 export const DEFAULT_GA_SETTINGS: GaSettings = {

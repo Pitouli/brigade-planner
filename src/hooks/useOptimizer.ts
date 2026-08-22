@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseTable } from '../engine/parseTable';
-import type { GaSettings, Genome, OptimizationRun, ParsedTable, Weights } from '../engine/types';
+import type {
+  BrigadeAlgoSettings,
+  GaSettings,
+  Genome,
+  OptimizationRun,
+  ParsedTable,
+  Weights,
+} from '../engine/types';
 
 interface UseOptimizerResult {
   parsed: ParsedTable | null;
@@ -12,7 +19,7 @@ interface UseOptimizerResult {
   progressCurrent: number;
   progressTotal: number;
   parse: (csv: string) => ParsedTable | null;
-  generate: (ratio: number, weights: Weights, gaSettings: GaSettings) => void;
+  generate: (algoSettings: BrigadeAlgoSettings, weights: Weights, gaSettings: GaSettings) => void;
   removeRun: (id: number) => void;
   clearHistory: () => void;
 }
@@ -21,7 +28,7 @@ interface WorkerRequest {
   type: 'run';
   payload: {
     parsed: ParsedTable;
-    ratio: number;
+    algoSettings: BrigadeAlgoSettings;
     weights: Weights;
     gaSettings: GaSettings;
     previousGenomes: Genome[];
@@ -42,7 +49,7 @@ interface WorkerSuccessMessage {
   payload: {
     genome: Genome;
     detail: OptimizationRun['detail'];
-    ratio: number;
+    algoSettings: BrigadeAlgoSettings;
     ms: number;
   };
 }
@@ -91,10 +98,10 @@ export function useOptimizer(): UseOptimizerResult {
         return;
       }
 
-      const { genome, detail, ratio, ms } = data.payload;
+      const { genome, detail, algoSettings, ms } = data.payload;
       setHistory((current) => {
         const nextId = current.reduce((maxId, run) => Math.max(maxId, run.id), 0) + 1;
-        return [{ id: nextId, genome, detail, ratio, ms }, ...current];
+        return [{ id: nextId, genome, detail, algoSettings, ms }, ...current];
       });
       setLastRunMs(ms);
       setProgress(100);
@@ -129,7 +136,7 @@ export function useOptimizer(): UseOptimizerResult {
   }, []);
 
   const generate = useCallback(
-    (ratio: number, weights: Weights, gaSettings: GaSettings) => {
+    (algoSettings: BrigadeAlgoSettings, weights: Weights, gaSettings: GaSettings) => {
       if (!parsed || !workerRef.current) return;
       if (isRunning) return;
 
@@ -140,7 +147,7 @@ export function useOptimizer(): UseOptimizerResult {
       setIsRunning(true);
       const request: WorkerRequest = {
         type: 'run',
-        payload: { parsed, ratio, weights, gaSettings, previousGenomes },
+        payload: { parsed, algoSettings, weights, gaSettings, previousGenomes },
       };
       workerRef.current.postMessage(request);
     },

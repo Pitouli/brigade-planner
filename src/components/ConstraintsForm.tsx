@@ -1,20 +1,32 @@
 import { Grid, NumberInput, Select, Stack, Title, Tooltip } from '@mantine/core';
-import type { GaSettings, Meal, Weights } from '../engine/types';
+import {
+  BRIGADE_FORMULA_PARAM_DEFAULTS,
+  type BrigadeAlgoSettings,
+  type BrigadeFormula,
+  type GaSettings,
+  type Meal,
+  type Weights,
+} from '../engine/types';
 
 interface ConstraintsFormProps {
   meals: Meal[];
-  ratio: number;
-  onRatioChange: (value: number) => void;
+  algoSettings: BrigadeAlgoSettings;
+  onAlgoSettingsChange: (settings: BrigadeAlgoSettings) => void;
   weights: Weights;
   onWeightsChange: (weights: Weights) => void;
   gaSettings: GaSettings;
   onGaSettingsChange: (settings: GaSettings) => void;
 }
 
+const FORMULA_OPTIONS: { value: BrigadeFormula; label: string }[] = [
+  { value: 'linear', label: 'Linéaire (x * MIAMs)' },
+  { value: 'power', label: 'Puissance (MIAMs^(1/x))' },
+];
+
 export function ConstraintsForm({
   meals,
-  ratio,
-  onRatioChange,
+  algoSettings,
+  onAlgoSettingsChange,
   weights,
   onWeightsChange,
   gaSettings,
@@ -24,10 +36,18 @@ export function ConstraintsForm({
     onWeightsChange({ ...weights, [key]: Number(value) });
   const setGa = (key: keyof GaSettings) => (value: number | string) =>
     onGaSettingsChange({ ...gaSettings, [key]: Number(value) });
+  const setAlgo = (key: keyof BrigadeAlgoSettings) => (value: number | string) =>
+    onAlgoSettingsChange({ ...algoSettings, [key]: Number(value) });
 
   const tooltips = {
-    ratio:
-      'Nombre de corvées estimé à partir du ratio pour garder un équilibre proche du nombre de miams.',
+    formula:
+      'Formule utilisée pour estimer, à partir du nombre de MIAMs d’un repas, le nombre de tâcherons (chef inclus) nécessaires.',
+    paramX:
+      'Paramètre « x » de la formule choisie (0.4 par défaut en linéaire, 2 par défaut en puissance).',
+    minTacherons:
+      'Nombre minimum de tâcherons imposé pour chaque repas, quelle que soit la formule.',
+    maxTacherons:
+      'Nombre maximum de tâcherons autorisé pour chaque repas, quelle que soit la formule.',
     sameDay: 'Pénalité élevée pour éviter qu’une personne ait deux tâches le même jour.',
     firstLast: 'Réduit les répartitions trop lourdes au premier ou au dernier repas de la journée.',
     horaire:
@@ -45,6 +65,8 @@ export function ConstraintsForm({
     mutRate:
       'Probabilité d’introduire une variation pour éviter le blocage sur une solution trop stable.',
     novelty: 'Valeur positive : le moteur favorise les solutions plus différentes des précédentes.',
+    spreadTasks:
+      'Favorise un étalement régulier des tâches (et des jours de chefferie parmi ses tâches) dans le temps plutôt que des tâches groupées.',
     firstOptimizableMeal:
       'Les repas précédents restent identiques au dernier résultat généré, mais leurs tâches comptent dans l’équilibrage.',
   } as const;
@@ -52,24 +74,76 @@ export function ConstraintsForm({
   return (
     <Stack gap="md">
       <Title order={3} size="xs" tt="uppercase" c="dimmed" mb={-10}>
-        Paramètres de répartition
+        Algorithme de Brigade
       </Title>
       <Grid>
         <Grid.Col span={{ base: 6, sm: 3 }}>
-          <Tooltip label={tooltips.ratio} multiline w={260} withArrow>
+          <Tooltip label={tooltips.formula} multiline w={260} withArrow>
+            <div>
+              <Select
+                label="Formule"
+                data={FORMULA_OPTIONS}
+                value={algoSettings.formula}
+                onChange={(value) => {
+                  if (value === null) return;
+                  const formula = value as BrigadeFormula;
+                  onAlgoSettingsChange({
+                    ...algoSettings,
+                    formula,
+                    paramX: BRIGADE_FORMULA_PARAM_DEFAULTS[formula],
+                  });
+                }}
+                allowDeselect={false}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.paramX} multiline w={260} withArrow>
             <div>
               <NumberInput
-                label="Tâcheronnages cible « par miam »"
-                value={ratio}
-                onChange={(v) => onRatioChange(Number(v))}
-                step={0.05}
+                label="Paramètre X"
+                value={algoSettings.paramX}
+                onChange={setAlgo('paramX')}
+                step={0.1}
                 min={0.05}
-                max={1}
                 decimalScale={2}
               />
             </div>
           </Tooltip>
         </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.minTacherons} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="Min tâcherons"
+                value={algoSettings.minTacherons}
+                onChange={setAlgo('minTacherons')}
+                step={1}
+                min={0}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.maxTacherons} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="Max tâcherons"
+                value={algoSettings.maxTacherons}
+                onChange={setAlgo('maxTacherons')}
+                step={1}
+                min={1}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+      </Grid>
+
+      <Title order={3} size="xs" tt="uppercase" c="dimmed" mt={10} mb={-10}>
+        Paramètres de répartition
+      </Title>
+      <Grid>
         <Grid.Col span={{ base: 6, sm: 3 }}>
           <Tooltip label={tooltips.sameDay} multiline w={260} withArrow>
             <div>
@@ -103,6 +177,19 @@ export function ConstraintsForm({
                 label="Respect horaire (midi/soir)"
                 value={weights.horaire}
                 onChange={setWeight('horaire')}
+                step={0.5}
+                min={0}
+              />
+            </div>
+          </Tooltip>
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 3 }}>
+          <Tooltip label={tooltips.spreadTasks} multiline w={260} withArrow>
+            <div>
+              <NumberInput
+                label="Étaler les tâches"
+                value={weights.spreadTasks}
+                onChange={setWeight('spreadTasks')}
                 step={0.5}
                 min={0}
               />

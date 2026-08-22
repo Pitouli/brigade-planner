@@ -5,6 +5,8 @@ import { GenerationPanel } from './components/GenerationPanel';
 import { ResultCard } from './components/ResultCard';
 import { EXAMPLE_CSV } from './data/exampleCsv';
 import {
+  type BrigadeAlgoSettings,
+  DEFAULT_BRIGADE_ALGO_SETTINGS,
   DEFAULT_GA_SETTINGS,
   DEFAULT_WEIGHTS,
   type GaSettings,
@@ -15,7 +17,10 @@ import { useOptimizer } from './hooks/useOptimizer';
 
 function App() {
   const [csv, setCsv] = useLocalStorage('brigade-planner:csv', EXAMPLE_CSV);
-  const [ratio, setRatio] = useLocalStorage('brigade-planner:ratio', 0.4);
+  const [algoSettings, setAlgoSettings] = useLocalStorage<BrigadeAlgoSettings>(
+    'brigade-planner:algo',
+    DEFAULT_BRIGADE_ALGO_SETTINGS,
+  );
   const [weights, setWeights] = useLocalStorage<Weights>(
     'brigade-planner:weights',
     DEFAULT_WEIGHTS,
@@ -51,7 +56,7 @@ function App() {
   const handleGenerate = () => {
     const current = parsed ?? parse(csv);
     if (!current) return;
-    generate(ratio, weights, gaSettings);
+    generate(algoSettings, weights, gaSettings);
   };
 
   return (
@@ -86,8 +91,8 @@ function App() {
             progressCurrent={progressCurrent}
             progressTotal={progressTotal}
             runCount={history.length}
-            ratio={ratio}
-            onRatioChange={setRatio}
+            algoSettings={algoSettings}
+            onAlgoSettingsChange={setAlgoSettings}
             weights={weights}
             onWeightsChange={setWeights}
             gaSettings={gaSettings}

@@ -1,6 +1,6 @@
 import { Accordion, Button, Group, Progress, Stack, Text, Title } from '@mantine/core';
+import type { BrigadeAlgoSettings, GaSettings, Meal, Weights } from '../engine/types';
 import { ConstraintsForm } from './ConstraintsForm';
-import type { GaSettings, Meal, Weights } from '../engine/types';
 
 interface GenerationPanelProps {
   meals: Meal[];
@@ -11,8 +11,8 @@ interface GenerationPanelProps {
   progressCurrent: number;
   progressTotal: number;
   runCount: number;
-  ratio: number;
-  onRatioChange: (value: number) => void;
+  algoSettings: BrigadeAlgoSettings;
+  onAlgoSettingsChange: (settings: BrigadeAlgoSettings) => void;
   weights: Weights;
   onWeightsChange: (weights: Weights) => void;
   gaSettings: GaSettings;
@@ -30,8 +30,8 @@ export function GenerationPanel({
   progressCurrent,
   progressTotal,
   runCount,
-  ratio,
-  onRatioChange,
+  algoSettings,
+  onAlgoSettingsChange,
   weights,
   onWeightsChange,
   gaSettings,
@@ -55,8 +55,8 @@ export function GenerationPanel({
           <Accordion.Panel>
             <ConstraintsForm
               meals={meals}
-              ratio={ratio}
-              onRatioChange={onRatioChange}
+              algoSettings={algoSettings}
+              onAlgoSettingsChange={onAlgoSettingsChange}
               weights={weights}
               onWeightsChange={onWeightsChange}
               gaSettings={gaSettings}

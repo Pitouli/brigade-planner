@@ -22,6 +22,7 @@ const VIOLATION_GROUPS: { key: Violation['type']; title: string; color: string }
   { key: 'horaire', title: 'préférence midi/soir', color: 'cyan' },
   { key: 'chef', title: 'chefferie', color: 'violet' },
   { key: 'target', title: 'écart à la cible', color: 'gray' },
+  { key: 'spread', title: 'étalement dans le temps', color: 'indigo' },
 ];
 
 export function ResultCard({ run, parsed, onRemove }: ResultCardProps) {
@@ -34,6 +35,7 @@ export function ResultCard({ run, parsed, onRemove }: ResultCardProps) {
       horaire: [],
       target: [],
       chef: [],
+      spread: [],
     };
     for (const v of run.detail.violations) byType[v.type].push(v.text);
     return byType;
@@ -56,7 +58,7 @@ export function ResultCard({ run, parsed, onRemove }: ResultCardProps) {
             <Text span fw={700} c="var(--mantine-color-text)">
               {run.detail.score.toFixed(1)}
             </Text>{' '}
-            · ratio {run.ratio} · {run.ms} ms
+            · {run.ms} ms
           </Text>
         </div>
         <Group gap="xs">
@@ -162,7 +164,7 @@ export function ResultCard({ run, parsed, onRemove }: ResultCardProps) {
               </Table.Thead>
               <Table.Tbody>
                 {P.map((p, pi) => {
-                  const target = p.exempt ? p.immutable.length : run.ratio * p.miamCount;
+                  const target = run.detail.targets[pi];
                   const cookCount = run.detail.cookCount[pi];
                   const off = Math.abs(cookCount - target) >= 1;
                   const chefCount = run.detail.chefCount[pi];

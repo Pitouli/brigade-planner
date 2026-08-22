@@ -1,11 +1,17 @@
 import { runGA } from '../engine/genetic';
-import type { GaSettings, Genome, ParsedTable, Weights } from '../engine/types';
+import type {
+  BrigadeAlgoSettings,
+  GaSettings,
+  Genome,
+  ParsedTable,
+  Weights,
+} from '../engine/types';
 
 interface WorkerRequest {
   type: 'run';
   payload: {
     parsed: ParsedTable;
-    ratio: number;
+    algoSettings: BrigadeAlgoSettings;
     weights: Weights;
     gaSettings: GaSettings;
     previousGenomes: Genome[];
@@ -26,7 +32,7 @@ interface WorkerSuccessMessage {
   payload: {
     genome: Genome;
     detail: ReturnType<typeof runGA>['detail'];
-    ratio: number;
+    algoSettings: BrigadeAlgoSettings;
     ms: number;
   };
 }
@@ -46,7 +52,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     const t0 = performance.now();
     const { genome, detail } = runGA(
       payload.parsed,
-      payload.ratio,
+      payload.algoSettings,
       payload.weights,
       payload.gaSettings,
       payload.previousGenomes,
@@ -66,7 +72,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
 
     const response: WorkerSuccessMessage = {
       type: 'done',
-      payload: { genome, detail, ratio: payload.ratio, ms },
+      payload: { genome, detail, algoSettings: payload.algoSettings, ms },
     };
     self.postMessage(response);
   } catch (error) {
